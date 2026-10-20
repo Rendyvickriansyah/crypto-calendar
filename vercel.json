@@ -1,7 +1,6 @@
 {
   "outputDirectory": "public",
   "functions": {
-    "api/index.js": { "includeFiles": "{data,cache,public}/**", "maxDuration": 60 }
-  },
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }]
+    "api/*.js": { "includeFiles": "{data,cache}/**", "maxDuration": 60 }
+  }
 }
