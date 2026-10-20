@@ -227,8 +227,16 @@ async function load() {
     $('#view').innerHTML = `<div class="loading">Ngambil data kalender...</div>`;
     // range WIB -> UTC ms
     const from = new Date(a.getTime() - WIB).toISOString(), to = new Date(b.getTime() + DAY - 1 - WIB).toISOString();
-    const r = await fetch(`/api/events?from=${from}&to=${to}`);
-    const j = await r.json();
+    let j;
+    try {
+      const r = await fetch(`/api/events?from=${from}&to=${to}`);
+      const txt = await r.text();
+      try { j = JSON.parse(txt); } catch { throw new Error(`Server balas ${r.status}: ${txt.slice(0, 120)}`); }
+      if (!r.ok) throw new Error(j.error || `Server balas ${r.status}`);
+    } catch (e) {
+      $('#view').innerHTML = `<div class="loading">Gagal ambil data kalender: ${esc(e.message)} <button onclick="load()" style="margin-left:8px">Coba lagi</button></div>`;
+      return;
+    }
     state.events = j.events || [];
     state.loadedKey = key;
   }

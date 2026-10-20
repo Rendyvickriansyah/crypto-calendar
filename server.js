@@ -13,6 +13,8 @@ try { fs.mkdirSync(CACHE, { recursive: true }); } catch {}
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36';
 const HOUR = 3600e3, DAY = 24 * HOUR;
+// fetch dengan batas waktu: API luar yang nge-hang jangan sampai bikin seluruh request timeout
+const fetchT = (url, opt = {}, ms = 8000) => fetch(url, { ...opt, signal: AbortSignal.timeout(ms) });
 const EARNINGS_WATCH = ['COIN', 'MSTR', 'HOOD', 'CRCL', 'GLXY', 'MARA', 'RIOT', 'CLSK', 'IREN', 'CORZ', 'BMNR', 'SBET', 'NVDA', 'TSLA'];
 
 const readJson = (f, fb) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return fb; } };
@@ -145,7 +147,7 @@ function ffKind(t) {
 async function refreshFF() {
   if (Date.now() - ffState.fetchedAt < HOUR) return;
   try {
-    const r = await fetch('https://nfs.faireconomy.media/ff_calendar_thisweek.json', { headers: { 'User-Agent': UA } });
+    const r = await fetchT('https://nfs.faireconomy.media/ff_calendar_thisweek.json', { headers: { 'User-Agent': UA } });
     if (!r.ok) throw new Error('FF ' + r.status);
     const rows = (await r.json()).filter(x => x.country === 'USD');
     if (!rows.length) return;
@@ -177,16 +179,18 @@ function ffEvents() {
 // ---------- Earnings (Nasdaq calendar, cache per tanggal) ----------
 const EARN_FILE = path.join(CACHE, 'earnings.json');
 const earnCache = readJson(EARN_FILE, {});
+let nasdaqDownUntil = 0; // kalau Nasdaq gagal/diblok, skip sementara biar kalender tetap cepat tampil
 async function earningsForDay(day) {
   const c = earnCache[day], past = Date.parse(day) < Date.now() - 2 * DAY;
   if (c && (past || Date.now() - c.at < 12 * HOUR)) return c.rows;
+  if (Date.now() < nasdaqDownUntil) return c ? c.rows : [];
   try {
-    const r = await fetch(`https://api.nasdaq.com/api/calendar/earnings?date=${day}`, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+    const r = await fetchT(`https://api.nasdaq.com/api/calendar/earnings?date=${day}`, { headers: { 'User-Agent': UA, Accept: 'application/json' } }, 5000);
     const j = await r.json();
     const rows = (j?.data?.rows || []).filter(x => EARNINGS_WATCH.includes(x.symbol));
     earnCache[day] = { at: Date.now(), rows };
     return rows;
-  } catch (e) { console.error('[earn]', day, e.message); return c ? c.rows : []; }
+  } catch (e) { console.error('[earn]', day, e.message); nasdaqDownUntil = Date.now() + 10 * 60e3; return c ? c.rows : []; }
 }
 async function earningsEvents(fromMs, toMs) {
   const days = [];
@@ -236,7 +240,7 @@ function pastOccurrences(kind) {
 async function klinesAround(ts) {
   if (klCache[ts]) return klCache[ts];
   const start = ts - HOUR; // 4 candle sebelum event
-  const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=${start}&limit=101`);
+  const r = await fetchT(`https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=15m&startTime=${start}&limit=101`);
   const k = await r.json();
   if (!Array.isArray(k) || k.length < 101) throw new Error('klines kurang');
   klCache[ts] = k.map(c => [c[0], +c[1], +c[2], +c[3], +c[4]]);
@@ -248,7 +252,7 @@ async function baseline() {
   if (b && b.v === 2 && Date.now() - b.at < 12 * HOUR) return b;
   const h1 = [];
   for (let t = Date.UTC(2024, 0, 1); t < Date.now(); ) {
-    const k = await (await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1h&startTime=${t}&limit=1000`)).json();
+    const k = await (await fetchT(`https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1h&startTime=${t}&limit=1000`)).json();
     if (!Array.isArray(k) || !k.length) break;
     for (const c of k) h1.push([c[0], +c[1], +c[2], +c[3], +c[4]]);
     t = k[k.length - 1][0] + HOUR;
