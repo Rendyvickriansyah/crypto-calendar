@@ -1,0 +1,101 @@
+{
+ "source": "federalreserve.gov/monetarypolicy/fomccalendars.htm, dicek 18 Okt 2026. Tanggal = hari keputusan (hari ke-2 meeting), 14:00 ET. sep=true artinya ada Summary of Economic Projections (dot plot).",
+ "meetings": [
+  {
+   "date": "2024-01-31",
+   "sep": false
+  },
+  {
+   "date": "2024-03-20",
+   "sep": true
+  },
+  {
+   "date": "2024-05-01",
+   "sep": false
+  },
+  {
+   "date": "2024-06-12",
+   "sep": true
+  },
+  {
+   "date": "2024-07-31",
+   "sep": false
+  },
+  {
+   "date": "2024-09-18",
+   "sep": true
+  },
+  {
+   "date": "2024-11-07",
+   "sep": false
+  },
+  {
+   "date": "2024-12-18",
+   "sep": true
+  },
+  {
+   "date": "2025-01-29",
+   "sep": false
+  },
+  {
+   "date": "2025-03-19",
+   "sep": true
+  },
+  {
+   "date": "2025-05-07",
+   "sep": false
+  },
+  {
+   "date": "2025-06-18",
+   "sep": true
+  },
+  {
+   "date": "2025-07-30",
+   "sep": false
+  },
+  {
+   "date": "2025-09-17",
+   "sep": true
+  },
+  {
+   "date": "2025-10-29",
+   "sep": false
+  },
+  {
+   "date": "2025-12-10",
+   "sep": true
+  },
+  {
+   "date": "2026-01-28",
+   "sep": false
+  },
+  {
+   "date": "2026-03-18",
+   "sep": true
+  },
+  {
+   "date": "2026-04-29",
+   "sep": false
+  },
+  {
+   "date": "2026-06-17",
+   "sep": true
+  },
+  {
+   "date": "2026-07-29",
+   "sep": false
+  },
+  {
+   "date": "2026-09-16",
+   "sep": true
+  },
+  {
+   "date": "2026-10-28",
+   "sep": false
+  },
+  {
+   "date": "2026-12-09",
+   "sep": true
+  }
+ ]
+}

@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crypto Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1017; --panel:#12141c; --cell:#10121a; --line:#1f2230; --line2:#2a2e3e;
+  --text:#e9eaf0; --muted:#8a8fa3; --dim:#5b6075;
+  --macro:#4f8cff; --fed:#a67cff; --unlock:#ff9f43; --expiry:#f5c84c; --earnings:#2ecc8f; --holiday:#7d8396;
+  --up:#2ecc8f; --down:#ff5c6c; --today:#ef4b56;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.wrap{max-width:1500px;margin:0 auto;padding:28px 32px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.title{display:flex;align-items:baseline;gap:14px}
+h1{font-size:28px;font-weight:500;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+.ctrls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{background:transparent;border:1px solid var(--line2);border-radius:10px;height:42px;padding:0 14px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;transition:background .15s,border-color .15s}
+.btn:hover{background:#181b26;border-color:#3a3f54}
+.btn.icon{width:46px;justify-content:center;padding:0}
+.btn.on{background:#1b2030;border-color:#3d4560}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden;height:42px}
+.seg button{background:none;border:0;padding:0 14px;cursor:pointer;font-size:14px;color:var(--muted)}
+.seg button.on{background:#1b2030;color:var(--text)}
+.dd{position:relative}
+.menu{position:absolute;right:0;top:48px;background:#151824;border:1px solid var(--line2);border-radius:12px;padding:8px;min-width:240px;z-index:20;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none}
+.menu.open{display:block}
+.menu label{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px}
+.menu label:hover{background:#1c2030}
+.menu .sep{height:1px;background:var(--line);margin:6px 4px}
+.menu .hd{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;padding:6px 10px 2px}
+.sw{width:10px;height:10px;border-radius:3px}
+input[type=checkbox],input[type=radio]{accent-color:var(--macro)}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin:-6px 0 16px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+.cal{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--cell)}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line)}
+.dow div{padding:16px 14px 10px;text-align:right;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.day{min-height:178px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 12px 10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.day:nth-child(7n){border-right:0}
+.day.out .num{color:var(--dim)}
+.num{align-self:flex-end;font-size:19px;font-weight:500;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;cursor:pointer;margin-bottom:2px}
+.num:hover{background:#1a1d29}
+.day.today .num{background:var(--today);color:#fff}
+.chip{display:flex;align-items:center;gap:7px;padding:3px 4px 3px 0;border-radius:6px;cursor:pointer;min-width:0;font-size:13.5px;line-height:1.25}
+.chip:hover{background:#181b27}
+.chip .bar{width:3px;align-self:stretch;border-radius:2px;flex:none}
+.chip .ic{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:8.5px;font-weight:700;letter-spacing:-.02em;color:#fff}
+.chip .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.chip .tm{color:var(--muted);font-size:12.5px;flex:none;font-variant-numeric:tabular-nums}
+.chip.past{opacity:.42}
+.chip .hi{width:6px;height:6px;border-radius:50%;background:var(--down);flex:none}
+.more{font-size:13px;color:var(--muted);padding:2px 4px;cursor:pointer;border-radius:6px;align-self:flex-start}
+.more:hover{color:var(--text);background:#181b27}
+
+/* agenda */
+.agenda{border:1px solid var(--line);border-radius:14px;background:var(--cell)}
+.ag-day{display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid var(--line)}
+.ag-day:last-child{border-bottom:0}
+.ag-date{padding:18px 20px;color:var(--muted);font-size:14px}
+.ag-date b{display:block;color:var(--text);font-size:22px;font-weight:500}
+.ag-date.today b{color:var(--today)}
+.ag-list{padding:12px 16px 12px 0;display:flex;flex-direction:column;gap:2px}
+.ag-list .chip{font-size:14.5px;padding:7px 8px 7px 0}
+.ag-empty{color:var(--dim);font-size:14px;padding:8px 0}
+.tag{font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);flex:none}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(5,6,10,.55);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);background:var(--panel);border-left:1px solid var(--line2);transform:translateX(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);z-index:31;overflow-y:auto;padding:26px 28px 40px}
+.drawer.open{transform:none}
+.x{position:absolute;top:18px;right:18px}
+.d-cat{display:inline-flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.d-title{font-size:24px;font-weight:600;margin:10px 0 6px;letter-spacing:-.01em;padding-right:40px}
+.d-time{color:var(--muted);font-size:14px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.kv div{background:#171a25;border:1px solid var(--line);border-radius:10px;padding:12px}
+.kv small{display:block;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.kv b{font-size:17px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.note{font-size:14px;line-height:1.55;color:#c5c8d6;margin:14px 0}
+.warn{font-size:13px;color:var(--expiry);background:rgba(245,200,76,.08);border:1px solid rgba(245,200,76,.25);padding:10px 12px;border-radius:10px;margin:14px 0}
+.src{font-size:12px;color:var(--dim);margin-top:6px}
+.sec{margin-top:26px;border-top:1px solid var(--line);padding-top:20px}
+.sec h3{font-size:15px;margin:0 0 4px;font-weight:600}
+.sec p.s{color:var(--muted);font-size:13px;margin:0 0 16px;line-height:1.5}
+.cmp{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.cmp .row{display:grid;grid-template-columns:110px 1fr 64px;gap:10px;align-items:center;font-size:13px}
+.cmp .lbl{color:var(--muted)}
+.cmp .track{display:flex;flex-direction:column;gap:3px}
+.cmp .b{height:8px;border-radius:4px}
+.cmp .v{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;line-height:1.35}
+.cmp .v span{display:block;color:var(--dim)}
+.mult{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.callout{background:#171a25;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:14px;line-height:1.5}
+.spark{width:100%;height:120px;display:block;margin:6px 0 4px}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th{color:var(--dim);font-weight:500;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 4px;text-align:right;border-bottom:1px solid #1a1d29;font-family:'JetBrains Mono',monospace;font-size:12.5px}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.loading{color:var(--muted);font-size:14px;padding:20px 0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1d2232;border:1px solid var(--line2);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;z-index:40}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.foot{color:var(--dim);font-size:12px;margin-top:14px;line-height:1.6}
+
+@media (max-width:860px){
+  .wrap{padding:18px 16px 40px}
+  h1{font-size:22px}
+  .day{min-height:86px;padding:6px}
+  .num{font-size:14px;width:28px;height:28px}
+  .dow div{padding:10px 6px;font-size:12px;text-align:center}
+  .day .chip .t,.day .chip .tm,.day .chip .hi{display:none}
+  .day .chip{padding:1px}
+  .day .chip .bar{display:none}
+  .day .chip .ic{width:9px;height:9px;font-size:0;background:var(--c)!important;box-shadow:none!important}
+  .day .chip.past{opacity:.35}
+  .day .chips{display:flex;flex-wrap:wrap;gap:3px}
+  .more{font-size:11px}
+  .ag-day{grid-template-columns:1fr}
+  .ag-date{padding:14px 16px 0}
+  .ag-list{padding:6px 12px 12px}
+  .kv{grid-template-columns:1fr 1fr}
+  .ctrls{width:100%}
+  .btn{height:38px;font-size:14px}
+  .btn.icon{width:40px}
+  .seg{height:38px;flex:1 1 100%;order:-1}
+  .seg button{flex:1;padding:0 8px;font-size:13px;white-space:nowrap}
+  .menu{left:0;right:auto}
+  .drawer{padding:22px 18px 40px}
+  .cmp .row{grid-template-columns:90px 1fr 58px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1 id="h1">Oktober 2026</h1>
+      <span class="sub" id="tz">Semua jam dalam WIB</span>
+    </div>
+    <div class="ctrls">
+      <button class="btn icon" id="prev" aria-label="Sebelumnya"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="btn" id="todayBtn">Hari ini</button>
+      <button class="btn icon" id="next" aria-label="Berikutnya"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+      <div class="seg" id="viewSeg">
+        <button data-v="month" class="on">Bulanan</button>
+        <button data-v="week">7 Hari ke Depan</button>
+      </div>
+      <div class="dd">
+        <button class="btn" id="typeBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Filter <span id="fcount" class="tag">6</span></button>
+        <div class="menu" id="typeMenu"></div>
+      </div>
+      <button class="btn" id="copyBtn" title="Salin ringkasan 7 hari ke depan (buat Discord/market update)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Salin ringkasan</button>
+    </div>
+  </header>
+  <div class="legend" id="legend"></div>
+  <div id="view"></div>
+  <div class="foot">Sumber: BLS.gov (jadwal CPI/NFP/PPI/JOLTS), federalreserve.gov (FOMC), ForexFactory (data macro minggu berjalan + forecast), Nasdaq (earnings), Binance (harga BTC buat reaksi historis). Unlock masih seed manual di <code>data/unlocks.json</code>, cek ulang di Tokenomist. Event bertanda "estimasi" dihitung dari aturan rutin, bukan dari pengumuman resmi.</div>
+</div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = {
+  macro:    { label:'US Macro',        color:'var(--macro)' },
+  fed:      { label:'The Fed',         color:'var(--fed)' },
+  unlock:   { label:'Token Unlock',    color:'var(--unlock)' },
+  expiry:   { label:'Options/Futures Expiry', color:'var(--expiry)' },
+  earnings: { label:'Earnings Saham Crypto', color:'var(--earnings)' },
+  holiday:  { label:'US Market Libur', color:'var(--holiday)' },
+};
+const IMPACT_RANK = { low:0, medium:1, high:2 };
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const HARI = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const HARI_FULL = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const WIB = 7*3600e3, DAY = 864e5;
+
+const store = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem('cc.'+k)); localStorage.setItem('cc.'+k, JSON.stringify(v)); } catch { return null; } };
+const state = {
+  view: store('view') || (innerWidth < 700 ? 'week' : 'month'),
+  cursor: null, events: [], loadedKey: '',
+  cats: store('cats') || Object.keys(CATS),
+  minImpact: store('minImpact') ?? 1,
+};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// tanggal di WIB direpresentasikan sebagai Date "UTC" yang udah digeser +7 jam
+const wib = ts => new Date(ts + WIB);
+const dkey = d => d.toISOString().slice(0,10);
+const todayW = () => { const d = wib(Date.now()); d.setUTCHours(0,0,0,0); return d; };
+const fmtTime = ts => { const d = wib(ts); return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; };
+const fmtDate = ts => { const d = wib(ts); return `${HARI_FULL[d.getUTCDay()]}, ${d.getUTCDate()} ${BULAN[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const fmtEt = ts => new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',month:'short',day:'numeric'}).format(ts) + ' ET';
+const pct = (v, d=2) => (v>0?'+':'') + (v*100).toFixed(d) + '%';
+const mondayOf = d => { const x = new Date(d); x.setUTCDate(x.getUTCDate() - ((x.getUTCDay()+6)%7)); return x; };
+
+state.cursor = todayW();
+
+function rangeFor() {
+  const c = state.cursor;
+  if (state.view === 'week') return [c, new Date(c.getTime()+6*DAY)];
+  const first = new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth(), 1));
+  const a = mondayOf(first);
+  const last = new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth()+1, 0));
+  const b = new Date(mondayOf(last).getTime() + 6*DAY);
+  return [a, b];
+}
+
+async function load() {
+  const [a, b] = rangeFor();
+  const key = dkey(a)+dkey(b);
+  renderHeader();
+  if (key !== state.loadedKey) {
+    $('#view').innerHTML = `<div class="loading">Ngambil data kalender...</div>`;
+    // range WIB -> UTC ms
+    const from = new Date(a.getTime() - WIB).toISOString(), to = new Date(b.getTime() + DAY - 1 - WIB).toISOString();
+    const r = await fetch(`/api/events?from=${from}&to=${to}`);
+    const j = await r.json();
+    state.events = j.events || [];
+    state.loadedKey = key;
+  }
+  render();
+}
+
+function visible() {
+  return state.events.filter(e => state.cats.includes(e.cat) && (e.cat === 'holiday' || e.cat === 'unlock' || e.cat === 'expiry' || IMPACT_RANK[e.impact] >= state.minImpact));
+}
+function byDay(list) {
+  const m = {};
+  for (const e of list) { const k = e.allDay ? e.date : dkey(wib(e.ts)); (m[k] ||= []).push(e); }
+  return m;
+}
+
+function icon(e) {
+  const c = CATS[e.cat].color;
+  let t = { macro:'US', fed:'FED', expiry:'EXP', holiday:'OFF' }[e.cat] || (e.symbol || '').slice(0,4);
+  return `<span class="ic" style="--c:${c};background:color-mix(in srgb, ${c} 32%, #141722);box-shadow:inset 0 0 0 1px color-mix(in srgb, ${c} 55%, transparent)">${esc(t)}</span>`;
+}
+function chip(e) {
+  const past = e.ts < Date.now() - 3600e3 ? ' past' : '';
+  return `<div class="chip${past}" data-id="${esc(e.id)}" title="${esc(e.title)}">
+    <span class="bar" style="background:${CATS[e.cat].color}"></span>${icon(e)}
+    <span class="t">${esc(e.title)}</span>${e.impact==='high'&&e.cat!=='holiday'?'<span class="hi" title="High impact"></span>':''}
+    <span class="tm">${e.allDay ? 'Libur' : fmtTime(e.ts)}</span></div>`;
+}
+
+function renderHeader() {
+  const c = state.cursor;
+  if (state.view === 'week') {
+    const [a, b] = rangeFor();
+    $('#h1').textContent = `${a.getUTCDate()} ${BULAN[a.getUTCMonth()].slice(0,3)} – ${b.getUTCDate()} ${BULAN[b.getUTCMonth()].slice(0,3)} ${b.getUTCFullYear()}`;
+  } else $('#h1').textContent = `${BULAN[c.getUTCMonth()]} ${c.getUTCFullYear()}`;
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === state.view));
+  $('#fcount').textContent = state.cats.length;
+  $('#legend').innerHTML = Object.entries(CATS).filter(([k]) => state.cats.includes(k)).map(([k,v]) => `<span><i class="sw" style="background:${v.color}"></i>${v.label}</span>`).join('') + `<span><i class="sw" style="background:var(--down);border-radius:50%;width:7px;height:7px"></i>High impact</span>`;
+}
+
+function render() {
+  const [a, b] = rangeFor();
+  const days = byDay(visible());
+  const tk = dkey(todayW());
+  if (state.view === 'month') {
+    const MAX = 3;
+    let html = `<div class="cal"><div class="dow">${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>`<div>${d}</div>`).join('')}</div><div class="grid">`;
+    for (let t = a.getTime(); t <= b.getTime(); t += DAY) {
+      const d = new Date(t), k = dkey(d), list = days[k] || [];
+      const out = d.getUTCMonth() !== state.cursor.getUTCMonth();
+      // urutkan: high impact dulu biar yang penting kebagian slot
+      const shown = [...list].sort((x,y) => (IMPACT_RANK[y.impact]-IMPACT_RANK[x.impact]) || x.ts-y.ts).slice(0, MAX).sort((x,y)=>x.ts-y.ts);
+      html += `<div class="day${out?' out':''}${k===tk?' today':''}"><span class="num" data-day="${k}">${d.getUTCDate()}</span><div class="chips">${shown.map(chip).join('')}</div>${list.length>MAX?`<span class="more" data-day="${k}">${list.length-MAX} lagi</span>`:''}</div>`;
+    }
+    $('#view').innerHTML = html + '</div></div>';
+  } else {
+    let html = '<div class="agenda">';
+    for (let t = a.getTime(); t <= b.getTime(); t += DAY) {
+      const d = new Date(t), k = dkey(d), list = days[k] || [];
+      html += `<div class="ag-day"><div class="ag-date${k===tk?' today':''}">${HARI_FULL[d.getUTCDay()]}<b>${d.getUTCDate()} ${BULAN[d.getUTCMonth()].slice(0,3)}</b></div><div class="ag-list">${list.length ? list.map(chip).join('') : '<div class="ag-empty">Nggak ada event</div>'}</div></div>`;
+    }
+    $('#view').innerHTML = html + '</div>';
+  }
+}
+
+function buildMenu() {
+  const m = $('#typeMenu');
+  m.innerHTML = `<div class="hd">Kategori</div>` + Object.entries(CATS).map(([k,v]) => `<label><input type="checkbox" data-cat="${k}" ${state.cats.includes(k)?'checked':''}><i class="sw" style="background:${v.color}"></i>${v.label}</label>`).join('') +
+    `<div class="sep"></div><div class="hd">Impact macro/earnings minimal</div>` +
+    [['Semua (termasuk low)',0],['Medium ke atas',1],['High aja',2]].map(([l,v]) => `<label><input type="radio" name="imp" value="${v}" ${state.minImpact===v?'checked':''}>${l}</label>`).join('');
+  m.onchange = e => {
+    if (e.target.dataset.cat) state.cats = [...m.querySelectorAll('[data-cat]:checked')].map(x => x.dataset.cat);
+    if (e.target.name === 'imp') state.minImpact = +e.target.value;
+    store('cats', state.cats); store('minImpact', state.minImpact);
+    renderHeader(); render();
+  };
+}
+
+// ---------- drawer ----------
+function openDrawer(html) { const d = $('#drawer'); d.innerHTML = `<button class="btn icon x" id="xBtn" aria-label="Tutup">✕</button>` + html; d.classList.add('open'); $('#scrim').classList.add('open'); d.scrollTop = 0; $('#xBtn').onclick = closeDrawer; }
+function closeDrawer() { $('#drawer').classList.remove('open'); $('#scrim').classList.remove('open'); }
+
+function showEvent(e) {
+  const c = CATS[e.cat], dt = e.detail || {};
+  const kv = [];
+  if (e.cat === 'macro' || e.cat === 'fed') { kv.push(['Actual', dt.actual || '–'], ['Forecast', dt.forecast || '–'], ['Previous', dt.previous || '–']); }
+  if (e.cat === 'earnings') kv.push(['EPS forecast', dt.epsForecast || '–'], ['EPS tahun lalu', dt.lastYearEPS || '–'], ['Kuartal', dt.quarter || '–']);
+  if (e.cat === 'unlock') kv.push(['Jumlah', dt.amount || 'Cek Tokenomist'], ['Token', dt.name || e.symbol], ['Jam', '07:00 WIB (est.)']);
+  const showKv = kv.length && !(e.cat !== 'earnings' && e.cat !== 'unlock' && kv.every(x => x[1] === '–'));
+  openDrawer(`
+    <div class="d-cat"><i class="sw" style="background:${c.color}"></i>${c.label} · impact ${e.impact}</div>
+    <div class="d-title">${esc(e.title)}</div>
+    <div class="d-time">${e.allDay ? fmtDate(e.ts) + ' (seharian)' : `${fmtDate(e.ts)} · <b style="color:var(--text)">${fmtTime(e.ts)} WIB</b> · ${fmtEt(e.ts)}`}</div>
+    ${showKv ? `<div class="kv">${kv.map(([k,v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
+    ${dt.session ? `<div class="note">${esc(dt.name)} · ${esc(dt.session)}${dt.marketCap ? ' · Market cap ' + esc(dt.marketCap) : ''}</div>` : ''}
+    ${dt.note ? `<div class="note">${esc(dt.note)}</div>` : ''}
+    ${e.estimated ? `<div class="warn">Estimasi: dihitung dari jadwal rutin, belum dari pengumuman resmi. Cek ulang mendekati harinya.</div>` : ''}
+    <div class="src">Sumber: ${esc(e.source)}</div>
+    ${e.kind ? `<div class="sec" id="react"><h3>Reaksi historis BTC</h3><div class="loading">Ngitung dari candle Binance...</div></div>` : ''}
+  `);
+  if (e.kind) loadReaction(e.kind);
+}
+
+async function loadReaction(kind) {
+  const box = $('#react');
+  let r;
+  try { r = await (await fetch('/api/reaction?kind=' + kind)).json(); } catch { box.innerHTML = '<h3>Reaksi historis BTC</h3><div class="loading">Gagal ambil data.</div>'; return; }
+  if (!document.body.contains(box)) return;
+  if (!r.n) { box.innerHTML = '<h3>Reaksi historis BTC</h3><p class="s">Belum ada histori buat event ini.</p>'; return; }
+  const s = r.stats, b = r.baseline;
+  const mult = b ? s.abs1h / b.abs1h : null;
+  const rows = [
+    ['Gerak 1 jam', s.abs1h, b?.abs1h],
+    ['Range 4 jam', s.range4h, b?.range4h],
+    ['Gerak 24 jam', s.abs24h, b?.abs24h],
+  ];
+  const max = Math.max(...rows.flatMap(x => [x[1], x[2] || 0]));
+  const verdict = mult == null ? '' : mult >= 1.8 ? `Jam pertama setelah rilis biasanya <b>jauh lebih liar</b> dari jam biasa.` : mult >= 1.2 ? `Jam pertama setelah rilis sedikit lebih volatil dari jam biasa.` : `Secara rata-rata gerak setelah rilis <b>nggak beda jauh</b> dari jam biasa.`;
+  const d24 = b ? s.abs24h / b.abs24h : null;
+  const verdict24 = d24 == null ? '' : d24 >= 1.25 ? ' Efeknya juga kebawa sampai 24 jam.' : ' Tapi dalam 24 jam, besarnya gerak udah balik normal.';
+  // sparkline: return 24h tiap kejadian (lama -> baru)
+  const ord = [...r.rows].sort((x,y) => x.ts - y.ts), W = 460, H = 120, m = Math.max(...ord.map(x => Math.abs(x.r24h)), .01), bw = W / ord.length;
+  const bars = ord.map((x,i) => { const h = Math.abs(x.r24h)/m*(H/2-6); const y = x.r24h>=0 ? H/2-h : H/2; return `<rect x="${i*bw+bw*.15}" y="${y}" width="${bw*.7}" height="${Math.max(h,1)}" rx="2" fill="${x.r24h>=0?'var(--up)':'var(--down)'}"><title>${fmtDate(x.ts)}: ${pct(x.r24h)}</title></rect>`; }).join('');
+  box.innerHTML = `
+    <h3>Reaksi historis BTC · ${esc(r.label)}</h3>
+    <p class="s">${r.n} kejadian terakhir, diukur dari harga BTC/USDT tepat di jam rilis. Dibandingin sama rata-rata jam/hari biasa.</p>
+    ${mult ? `<div class="callout"><div class="mult">${mult.toFixed(1)}x</div>gerak 1 jam vs jam biasa. ${verdict}${verdict24} BTC naik di 24 jam setelahnya <b>${s.up24h} dari ${r.n}</b> kali (rata-rata ${pct(s.mean24h)}).</div>` : ''}
+    <div class="cmp">${rows.map(([l, v, bv]) => `<div class="row"><div class="lbl">${l}</div><div class="track"><div class="b" style="width:${v/max*100}%;background:var(--macro)"></div>${bv?`<div class="b" style="width:${bv/max*100}%;background:#3a3f54"></div>`:''}</div><div class="v">${(v*100).toFixed(2)}%${bv?`<span>${(bv*100).toFixed(2)}%</span>`:''}</div></div>`).join('')}
+      <div style="font-size:12px;color:var(--dim);display:flex;gap:14px"><span><i class="sw" style="background:var(--macro);display:inline-block;vertical-align:-1px"></i> Setelah event</span><span><i class="sw" style="background:#3a3f54;display:inline-block;vertical-align:-1px"></i> Rata-rata biasa</span></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted)">Return 24 jam tiap kejadian (lama ke baru)</div>
+    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="#2a2e3e"/>${bars}</svg>
+    <table><thead><tr><th>Tanggal</th><th>Harga</th><th>1j</th><th>4j</th><th>24j</th></tr></thead><tbody>
+    ${r.rows.map(x => `<tr><td>${wib(x.ts).getUTCDate()} ${BULAN[wib(x.ts).getUTCMonth()].slice(0,3)} ${String(wib(x.ts).getUTCFullYear()).slice(2)}</td><td>${Math.round(x.p0).toLocaleString('id-ID')}</td>${['r1h','r4h','r24h'].map(k => `<td class="${x[k]>=0?'pos':'neg'}">${pct(x[k])}</td>`).join('')}</tr>`).join('')}
+    </tbody></table>
+    ${b ? `<p class="s" style="margin-top:12px">${esc(b.note)}</p>` : ''}`;
+}
+
+function showDay(k) {
+  const list = (byDay(visible())[k] || []);
+  const [y,m,d] = k.split('-').map(Number), ts = Date.UTC(y,m-1,d) - WIB;
+  openDrawer(`<div class="d-cat">Agenda</div><div class="d-title">${fmtDate(ts)}</div><div class="ag-list" style="padding:16px 0">${list.length ? list.map(chip).join('') : '<div class="ag-empty">Nggak ada event</div>'}</div>`);
+}
+
+// ---------- ringkasan minggu ini ----------
+async function copySummary() {
+  const a = todayW(), b = new Date(a.getTime() + 6*DAY);
+  const from = new Date(a.getTime() - WIB).toISOString(), to = new Date(b.getTime() + DAY - 1 - WIB).toISOString();
+  const evs = (await (await fetch(`/api/events?from=${from}&to=${to}`)).json()).events
+    .filter(e => e.cat !== 'macro' || IMPACT_RANK[e.impact] >= 1);
+  const days = byDay(evs);
+  let txt = `📅 **Kalender Crypto 7 Hari ke Depan** (${a.getUTCDate()} ${BULAN[a.getUTCMonth()].slice(0,3)} sampai ${b.getUTCDate()} ${BULAN[b.getUTCMonth()].slice(0,3)}, jam WIB)\n`;
+  for (let t = a.getTime(); t <= b.getTime(); t += DAY) {
+    const d = new Date(t), list = days[dkey(d)] || [];
+    if (!list.length) continue;
+    txt += `\n**${HARI_FULL[d.getUTCDay()]}, ${d.getUTCDate()} ${BULAN[d.getUTCMonth()].slice(0,3)}**\n`;
+    for (const e of list) txt += `${e.impact==='high'?'🔴':'•'} ${e.allDay ? 'Seharian' : fmtTime(e.ts)} ${e.title}${e.detail?.forecast ? ` (fcst ${e.detail.forecast}, prev ${e.detail.previous || '-'})` : ''}${e.detail?.amount ? ` (${e.detail.amount})` : ''}\n`;
+  }
+  try { await navigator.clipboard.writeText(txt); toast('Ringkasan 7 hari ke depan udah disalin'); }
+  catch { openDrawer(`<div class="d-title">Ringkasan minggu ini</div><textarea style="width:100%;height:60vh;background:#171a25;color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:12px;font:13px/1.5 'JetBrains Mono',monospace">${esc(txt)}</textarea>`); }
+}
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2200); }
+
+// ---------- events ----------
+$('#view').addEventListener('click', ev => {
+  const c = ev.target.closest('.chip'), day = ev.target.closest('[data-day]');
+  if (c) { const e = state.events.find(x => x.id === c.dataset.id); if (e) showEvent(e); }
+  else if (day) showDay(day.dataset.day);
+});
+$('#drawer').addEventListener('click', ev => {
+  const c = ev.target.closest('.chip'); if (!c) return;
+  const e = state.events.find(x => x.id === c.dataset.id); if (e) showEvent(e);
+});
+$('#scrim').onclick = closeDrawer;
+addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); $('#typeMenu').classList.remove('open'); } });
+const shift = n => { const c = state.cursor; state.cursor = state.view === 'week' ? new Date(c.getTime() + n*7*DAY) : new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth()+n, 1)); load(); };
+$('#prev').onclick = () => shift(-1);
+$('#next').onclick = () => shift(1);
+$('#todayBtn').onclick = () => { state.cursor = todayW(); load(); };
+$('#viewSeg').onclick = e => { const v = e.target.dataset.v; if (!v) return; state.view = v; store('view', v); if (v === 'week') state.cursor = todayW(); load(); };
+$('#typeBtn').onclick = e => { e.stopPropagation(); $('#typeMenu').classList.toggle('open'); };
+document.addEventListener('click', e => { if (!e.target.closest('.dd')) $('#typeMenu').classList.remove('open'); });
+$('#copyBtn').onclick = copySummary;
+buildMenu();
+load().then(() => { // deep link: #kind=cpi buka event terdekat jenis itu
+  const k = (location.hash.match(/kind=([a-z_]+)/) || [])[1]; if (!k) return;
+  const list = state.events.filter(e => e.kind === k);
+  const e = list.find(x => x.ts > Date.now()) || list[list.length - 1]; if (e) showEvent(e);
+});
+</script>
+</body>
+</html>

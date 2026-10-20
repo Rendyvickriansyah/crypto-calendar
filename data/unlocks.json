@@ -1,0 +1,41 @@
+{
+ "note": "SEED MANUAL. Jadwal rutin bulanan yang umum diketahui, BELUM diverifikasi per tanggal. Cek ulang di tokenomist.ai sebelum dipakai buat konten. Edit file ini buat nambah/ubah unlock. Format: monthly (day = tanggal tiap bulan, until = bulan terakhir) atau once (date).",
+ "unlocks": [
+  {
+   "symbol": "SUI",
+   "name": "Sui",
+   "type": "monthly",
+   "day": 1,
+   "until": "2030-12",
+   "amount": null,
+   "note": "Unlock rutin awal bulan"
+  },
+  {
+   "symbol": "APT",
+   "name": "Aptos",
+   "type": "monthly",
+   "day": 12,
+   "until": "2027-12",
+   "amount": null,
+   "note": "Unlock rutin bulanan"
+  },
+  {
+   "symbol": "STRK",
+   "name": "Starknet",
+   "type": "monthly",
+   "day": 15,
+   "until": "2027-03",
+   "amount": "127M STRK",
+   "note": "Unlock rutin investor & kontributor"
+  },
+  {
+   "symbol": "ARB",
+   "name": "Arbitrum",
+   "type": "monthly",
+   "day": 16,
+   "until": "2027-03",
+   "amount": "92.65M ARB",
+   "note": "Unlock rutin tim & investor"
+  }
+ ]
+}
